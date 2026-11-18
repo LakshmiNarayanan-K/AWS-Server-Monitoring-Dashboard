@@ -1,0 +1,490 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="5">
+    <title>Obsidian Telemetry | AWS Monitoring</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<div class="app-shell">
+
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-icon">◈</div>
+            <div>
+                <h2>OBSIDIAN</h2>
+                <span>TELEMETRY</span>
+            </div>
+        </div>
+
+        <div class="nav-label">MONITORING</div>
+
+        <nav>
+            <a href="#overview" class="nav-item active">
+                <span>◫</span> Overview
+            </a>
+            <a href="#instance" class="nav-item">
+                <span>▣</span> EC2 Instances
+            </a>
+            <a href="#cpu" class="nav-item">
+                <span>⌁</span> CPU Monitoring
+            </a>
+            <a href="#network" class="nav-item">
+                <span>⇄</span> Network Traffic
+            </a>
+            <a href="#health" class="nav-item">
+                <span>♡</span> Server Health
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="nav-label">SYSTEM</div>
+            <a href="#instance" class="nav-item">
+                <span>⚙</span> Settings
+            </a>
+
+            <div class="profile">
+                <div class="avatar">AWS</div>
+                <div>
+                    <strong>Cloud Monitor</strong>
+                    <small>Infrastructure Admin</small>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content" id="overview">
+
+        <header class="topbar">
+            <div class="breadcrumb">
+                <span>Infrastructure</span>
+                <span class="separator">/</span>
+                <strong>Overview</strong>
+            </div>
+
+            <div class="top-actions">
+                <div class="live-indicator">
+                    <span class="pulse"></span>
+                    LIVE MONITORING
+                </div>
+                <div class="region-tag">AWS EC2</div>
+                <button class="refresh-btn" onclick="window.location.reload()">
+                    ↻ Refresh
+                </button>
+            </div>
+        </header>
+
+        <section class="page-heading">
+            <div>
+                <div class="eyebrow">CLOUD INFRASTRUCTURE / MONITORING</div>
+                <h1>Infrastructure Overview</h1>
+                <p>Real-time visibility into your AWS server infrastructure.</p>
+            </div>
+
+            <div class="updated">
+                <span class="pulse"></span>
+                <span>Auto-refresh: 5 seconds</span>
+            </div>
+        </section>
+
+        <!-- METRIC CARDS -->
+
+        <section class="metric-grid">
+
+            <div class="metric-card">
+                <div class="metric-top">
+                    <span>INSTANCE STATUS</span>
+                    <div class="metric-icon green">◈</div>
+                </div>
+                <div class="metric-value status-value">
+                    {{ server.state | upper }}
+                </div>
+                <div class="metric-footer">
+                    <span class="status-dot"></span>
+                    EC2 Instance State
+                </div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-top">
+                    <span>CPU UTILIZATION</span>
+                    <div class="metric-icon blue">⌁</div>
+                </div>
+                <div class="metric-value">
+                    {% if metrics.cpu %}
+                        {{ metrics.cpu[-1].value }}<small>%</small>
+                    {% else %}
+                        --<small>%</small>
+                    {% endif %}
+                </div>
+                <div class="metric-footer">Latest CloudWatch reading</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-top">
+                    <span>NETWORK IN</span>
+                    <div class="metric-icon cyan">↓</div>
+                </div>
+                <div class="metric-value compact-value" id="networkInValue">
+                    --
+                </div>
+                <div class="metric-footer">Incoming traffic · Bytes</div>
+            </div>
+
+            <div class="metric-card">
+                <div class="metric-top">
+                    <span>NETWORK OUT</span>
+                    <div class="metric-icon violet">↑</div>
+                </div>
+                <div class="metric-value compact-value" id="networkOutValue">
+                    --
+                </div>
+                <div class="metric-footer">Outgoing traffic · Bytes</div>
+            </div>
+
+        </section>
+
+        <!-- INSTANCE INFORMATION -->
+
+        <section class="section-heading" id="instance">
+            <div>
+                <div class="eyebrow">COMPUTE RESOURCE</div>
+                <h2>Instance Information</h2>
+            </div>
+            <span class="section-tag">AWS / EC2</span>
+        </section>
+
+        <section class="instance-panel">
+
+            <div class="instance-main">
+                <div class="instance-symbol">▣</div>
+                <div>
+                    <span class="detail-label">INSTANCE ID</span>
+                    <h3 class="mono">{{ server.id }}</h3>
+                    <span class="instance-subtitle">Amazon Elastic Compute Cloud</span>
+                </div>
+            </div>
+
+            <div class="instance-details">
+
+                <div class="detail-item">
+                    <span class="detail-label">INSTANCE STATE</span>
+                    <strong class="state-text">
+                        <span class="status-dot"></span>
+                        {{ server.state | upper }}
+                    </strong>
+                </div>
+
+                <div class="detail-item">
+                    <span class="detail-label">INSTANCE TYPE</span>
+                    <strong class="mono">{{ server.type }}</strong>
+                </div>
+
+                <div class="detail-item">
+                    <span class="detail-label">PUBLIC IP ADDRESS</span>
+                    <strong class="mono">{{ server.ip }}</strong>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ANALYTICS -->
+
+        <section class="section-heading analytics-heading">
+            <div>
+                <div class="eyebrow">PERFORMANCE ANALYTICS</div>
+                <h2>Monitoring Analytics</h2>
+            </div>
+            <span class="section-tag">LAST 1 HOUR</span>
+        </section>
+
+        <section class="chart-grid">
+
+            <div class="chart-card large-chart" id="cpu">
+                <div class="chart-header">
+                    <div>
+                        <h3>CPU Utilization</h3>
+                        <p>Processor performance over time</p>
+                    </div>
+                    <span class="chart-badge blue-badge">CPU</span>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="cpuChart"></canvas>
+                    <div class="empty-state" id="cpuEmpty">
+                        <span>⌁</span>
+                        <strong>Waiting for CloudWatch metrics</strong>
+                        <small>CPU data will appear when datapoints are available.</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-card large-chart" id="network">
+                <div class="chart-header">
+                    <div>
+                        <h3>Network Traffic</h3>
+                        <p>Incoming and outgoing data</p>
+                    </div>
+                    <span class="chart-badge cyan-badge">NETWORK</span>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="networkChart"></canvas>
+                    <div class="empty-state" id="networkEmpty">
+                        <span>⇄</span>
+                        <strong>Waiting for CloudWatch metrics</strong>
+                        <small>Network data will appear when datapoints are available.</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-card full-chart" id="health">
+                <div class="chart-header">
+                    <div>
+                        <h3>Server Health</h3>
+                        <p>EC2 instance status check history</p>
+                    </div>
+                    <span class="chart-badge green-badge">HEALTH</span>
+                </div>
+
+                <div class="chart-container health-container">
+                    <canvas id="statusChart"></canvas>
+                    <div class="empty-state" id="statusEmpty">
+                        <span>♡</span>
+                        <strong>Waiting for CloudWatch metrics</strong>
+                        <small>Health data will appear when datapoints are available.</small>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <footer class="footer">
+            <span>◈ OBSIDIAN TELEMETRY</span>
+            <span>Powered by AWS EC2 · CloudWatch · Flask</span>
+        </footer>
+
+    </main>
+</div>
+
+<script>
+
+// ACTUAL AWS DATA FROM FLASK BACKEND
+
+const cpu = {{ metrics.cpu | tojson }};
+const netIn = {{ metrics.network_in | tojson }};
+const netOut = {{ metrics.network_out | tojson }};
+const status = {{ metrics.status_check | tojson }};
+
+
+// NETWORK VALUE FORMATTING
+
+function latestValue(data) {
+    if (!data || data.length === 0) return null;
+    return data[data.length - 1].value;
+}
+
+function formatBytes(value) {
+    if (value === null || value === undefined) return "--";
+
+    if (value < 1024) return value.toFixed(2) + " B";
+
+    if (value < 1024 * 1024)
+        return (value / 1024).toFixed(2) + " KB";
+
+    if (value < 1024 * 1024 * 1024)
+        return (value / (1024 * 1024)).toFixed(2) + " MB";
+
+    return (value / (1024 * 1024 * 1024)).toFixed(2) + " GB";
+}
+
+document.getElementById("networkInValue").textContent =
+    formatBytes(latestValue(netIn));
+
+document.getElementById("networkOutValue").textContent =
+    formatBytes(latestValue(netOut));
+
+
+// CHART CONFIGURATION
+
+Chart.defaults.color = "#94A3B8";
+Chart.defaults.font.family = "Inter";
+Chart.defaults.font.size = 11;
+
+function createChart(canvasId, emptyId, labels, datasets, unit = "") {
+
+    const canvas = document.getElementById(canvasId);
+    const empty = document.getElementById(emptyId);
+
+    if (!labels || labels.length === 0) {
+        canvas.style.display = "none";
+        empty.style.display = "flex";
+        return;
+    }
+
+    canvas.style.display = "block";
+    empty.style.display = "none";
+
+    new Chart(canvas, {
+        type: "line",
+
+        data: {
+            labels: labels,
+            datasets: datasets
+        },
+
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+
+            interaction: {
+                intersect: false,
+                mode: "index"
+            },
+
+            plugins: {
+                legend: {
+                    display: datasets.length > 1,
+
+                    labels: {
+                        usePointStyle: true,
+                        boxWidth: 7,
+                        padding: 20
+                    }
+                },
+
+                tooltip: {
+                    backgroundColor: "#171B26",
+                    borderColor: "rgba(255,255,255,0.12)",
+                    borderWidth: 1,
+                    padding: 12,
+                    titleColor: "#F8FAFC",
+                    bodyColor: "#CBD5E1",
+
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ": " +
+                                context.parsed.y + unit;
+                        }
+                    }
+                }
+            },
+
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+
+                    ticks: {
+                        maxTicksLimit: 8
+                    },
+
+                    border: {
+                        display: false
+                    }
+                },
+
+                y: {
+                    beginAtZero: true,
+
+                    grid: {
+                        color: "rgba(255,255,255,0.06)"
+                    },
+
+                    border: {
+                        display: false
+                    }
+                }
+            },
+
+            elements: {
+                point: {
+                    radius: 2,
+                    hoverRadius: 5
+                },
+
+                line: {
+                    tension: 0.35,
+                    borderWidth: 2
+                }
+            }
+        }
+    });
+}
+
+
+// CPU CHART
+
+createChart(
+    "cpuChart",
+    "cpuEmpty",
+    cpu.map(x => x.time),
+    [{
+        label: "CPU Usage",
+        data: cpu.map(x => x.value),
+        borderColor: "#3B82F6",
+        backgroundColor: "rgba(59,130,246,0.15)",
+        fill: true
+    }],
+    "%"
+);
+
+
+// NETWORK CHART
+
+createChart(
+    "networkChart",
+    "networkEmpty",
+    netIn.map(x => x.time),
+    [
+        {
+            label: "Network In",
+            data: netIn.map(x => x.value),
+            borderColor: "#06B6D4",
+            backgroundColor: "rgba(6,182,212,0.08)",
+            fill: true
+        },
+
+        {
+            label: "Network Out",
+            data: netOut.map(x => x.value),
+            borderColor: "#8B5CF6",
+            backgroundColor: "rgba(139,92,246,0.06)",
+            fill: false
+        }
+    ],
+    " Bytes"
+);
+
+
+// SERVER HEALTH CHART
+
+createChart(
+    "statusChart",
+    "statusEmpty",
+    status.map(x => x.time),
+    [{
+        label: "Status Check Failed",
+        data: status.map(x => x.value),
+        borderColor: "#10B981",
+        backgroundColor: "rgba(16,185,129,0.12)",
+        fill: true,
+        stepped: true
+    }]
+);
+
+</script>
+
+</body>
+</html>
